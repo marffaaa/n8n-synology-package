@@ -51,9 +51,7 @@ log_info "Date: $(date '+%Y-%m-%d %H:%M:%S')"
 log_info "Backing up n8n data..."
 
 if [ -d "$N8N_DATA" ]; then
-    tar -czf "$BACKUP_DIR/n8n-data-$DATE.tar.gz" -C "$(dirname $N8N_DATA)" "$(basename $N8N_DATA)" 2>&1
-
-    if [ $? -eq 0 ]; then
+    if tar -czf "$BACKUP_DIR/n8n-data-$DATE.tar.gz" -C "$(dirname $N8N_DATA)" "$(basename $N8N_DATA)" 2>&1; then
         SIZE=$(du -h "$BACKUP_DIR/n8n-data-$DATE.tar.gz" | cut -f1)
         log_success "n8n data backed up ($SIZE)"
     else
@@ -70,9 +68,7 @@ fi
 if docker ps --format '{{.Names}}' | grep -q "n8n-postgres"; then
     log_info "Backing up PostgreSQL database..."
 
-    docker exec n8n-postgres pg_dump -U n8n -d n8n 2>/dev/null | gzip > "$BACKUP_DIR/n8n-db-$DATE.sql.gz"
-
-    if [ $? -eq 0 ] && [ -f "$BACKUP_DIR/n8n-db-$DATE.sql.gz" ]; then
+    if docker exec n8n-postgres pg_dump -U n8n -d n8n 2>/dev/null | gzip > "$BACKUP_DIR/n8n-db-$DATE.sql.gz" && [ -f "$BACKUP_DIR/n8n-db-$DATE.sql.gz" ]; then
         SIZE=$(du -h "$BACKUP_DIR/n8n-db-$DATE.sql.gz" | cut -f1)
         log_success "PostgreSQL database backed up ($SIZE)"
     else
@@ -89,9 +85,7 @@ COMPOSE_FILE="/var/packages/n8n/target/docker-compose.yml"
 
 if [ -f "$COMPOSE_FILE" ]; then
     log_info "Backing up Docker Compose configuration..."
-    cp "$COMPOSE_FILE" "$BACKUP_DIR/docker-compose-$DATE.yml"
-
-    if [ $? -eq 0 ]; then
+    if cp "$COMPOSE_FILE" "$BACKUP_DIR/docker-compose-$DATE.yml"; then
         log_success "Docker Compose configuration backed up"
     else
         log_warning "Failed to back up docker-compose.yml"
@@ -107,9 +101,7 @@ ENV_FILE="/var/packages/n8n/target/.env"
 
 if [ -f "$ENV_FILE" ]; then
     log_info "Backing up .env file..."
-    cp "$ENV_FILE" "$BACKUP_DIR/env-$DATE"
-
-    if [ $? -eq 0 ]; then
+    if cp "$ENV_FILE" "$BACKUP_DIR/env-$DATE"; then
         log_success ".env file backed up"
     else
         log_warning "Failed to back up .env"

@@ -120,8 +120,7 @@ postinst() {
         log "Generating initial configuration (.env)..."
 
         log "Generating encryption key (64 characters)..."
-        ENCRYPTION_KEY=$(openssl rand -hex 32 2>&1)
-        if [ $? -eq 0 ]; then
+        if ENCRYPTION_KEY=$(openssl rand -hex 32 2>&1); then
             log_success "Encryption key generated: ${ENCRYPTION_KEY:0:16}...${ENCRYPTION_KEY: -8}"
         else
             log_error "Failed to generate encryption key"
@@ -129,8 +128,7 @@ postinst() {
         fi
 
         log "Generating PostgreSQL password..."
-        POSTGRES_PASSWORD=$(openssl rand -base64 24 | tr -d "=+/" | cut -c1-24)
-        if [ $? -eq 0 ]; then
+        if POSTGRES_PASSWORD=$(openssl rand -base64 24 | tr -d "=+/" | cut -c1-24); then
             log_success "PostgreSQL password generated: ${POSTGRES_PASSWORD:0:4}...${POSTGRES_PASSWORD: -4}"
         else
             log_error "Failed to generate PostgreSQL password"
@@ -138,7 +136,7 @@ postinst() {
         fi
 
         log "Writing .env file..."
-        cat > "${TARGET_DIR}/.env" <<EOF
+        if cat > "${TARGET_DIR}/.env" <<EOF
 # n8n configuration for Synology DSM - Automatically generated on $(date)
 N8N_PORT=5678
 N8N_HOST=localhost
@@ -151,8 +149,7 @@ N8N_BASIC_AUTH_ACTIVE=false
 N8N_BASIC_AUTH_USER=admin
 N8N_BASIC_AUTH_PASSWORD=
 EOF
-
-        if [ $? -eq 0 ]; then
+        then
             log_success ".env file created successfully"
         else
             log_error "Failed to create .env file"
@@ -254,7 +251,7 @@ preuninst() {
     # Stop Docker containers
     if [ -f "${TARGET_DIR}/docker-compose.yml" ]; then
         log "Stopping n8n Docker containers..."
-        cd "${TARGET_DIR}"
+        cd "${TARGET_DIR}" || exit 1
 
         if command -v docker-compose &> /dev/null; then
             log "Using docker-compose..."
@@ -350,7 +347,7 @@ postupgrade() {
     # Update Docker images
     if [ -f "${TARGET_DIR}/docker-compose.yml" ]; then
         log "Updating Docker images..."
-        cd "${TARGET_DIR}"
+        cd "${TARGET_DIR}" || exit 1
 
         if command -v docker-compose &> /dev/null; then
             log "Downloading new images with docker-compose..."
