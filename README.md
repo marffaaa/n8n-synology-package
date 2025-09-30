@@ -7,35 +7,16 @@
 <img src="./assets/logos/synology/synology-logo.svg" alt="Synology Logo" width="50%"/>
 
 <br/><br/>
-
-<!-- Core Badges -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit)
-[![GitHub release](https://img.shields.io/github/v/release/josedacosta/n8n-synology-package)](https://github.com/josedacosta/n8n-synology-package/releases)
-[![Downloads](https://img.shields.io/github/downloads/josedacosta/n8n-synology-package/total)](https://github.com/josedacosta/n8n-synology-package/releases)
-[![GitHub stars](https://img.shields.io/github/stars/josedacosta/n8n-synology-package?style=social)](https://github.com/josedacosta/n8n-synology-package/stargazers)
-
-<!-- Build & Quality -->
-[![Build Status](https://img.shields.io/github/actions/workflow/status/josedacosta/n8n-synology-package/release.yml?branch=main&label=build)](https://github.com/josedacosta/n8n-synology-package/actions)
 [![Code Quality](https://img.shields.io/badge/code%20quality-A+-brightgreen)](https://github.com/josedacosta/n8n-synology-package)
+[![Downloads](https://img.shields.io/github/downloads/josedacosta/n8n-synology-package/total)](https://github.com/josedacosta/n8n-synology-package/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/josedacosta/n8n-synology-package/pulls)
-
-<!-- Technical Stack -->
 [![Synology DSM](https://img.shields.io/badge/DSM-7.0%2B-blue)](https://www.synology.com)
-[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)](https://www.docker.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-316192)](https://www.postgresql.org/)
 [![n8n](https://img.shields.io/badge/n8n-latest-EA4B71)](https://n8n.io)
-
-<!-- Features -->
-[![Automated Backup](https://img.shields.io/badge/Backup-Automated-green)](https://github.com/josedacosta/n8n-synology-package#configuration)
 [![HTTPS Support](https://img.shields.io/badge/HTTPS-Supported-green)](https://github.com/josedacosta/n8n-synology-package#https-configuration-with-reverse-proxy)
 [![Production Ready](https://img.shields.io/badge/Production-Ready-success)](https://github.com/josedacosta/n8n-synology-package)
-
-<!-- Community -->
-[![GitHub issues](https://img.shields.io/github/issues/josedacosta/n8n-synology-package)](https://github.com/josedacosta/n8n-synology-package/issues)
-[![GitHub last commit](https://img.shields.io/github/last-commit/josedacosta/n8n-synology-package)](https://github.com/josedacosta/n8n-synology-package/commits/main)
-[![Made with ❤️](https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F-red)](https://github.com/josedacosta)
-
 </div>
 
 # n8n Synology Package

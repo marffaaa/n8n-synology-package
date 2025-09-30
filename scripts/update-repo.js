@@ -183,7 +183,7 @@ function updateRepository() {
   const icon256Url = `${baseIconUrl}/icon_256.png`;
 
   // Generate snapshot URLs (check all snapshots that exist)
-  const packageDir = path.join(repoDir, 'packages', packageInfo.package, packageInfo.version);
+  // packageDir already declared above, just reuse it
   const snapshots = [];
 
   // Check for all possible snapshots (up to 10 for future expansion)
