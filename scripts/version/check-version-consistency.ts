@@ -54,6 +54,7 @@ interface Versions {
 
 interface PackageJson {
     version: string;
+
     [key: string]: any;
 }
 
