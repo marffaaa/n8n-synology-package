@@ -1,0 +1,429 @@
+#!/bin/bash
+
+# =============================================================================
+# n8n installation script for Synology DSM 7+
+# =============================================================================
+
+PACKAGE_NAME="n8n"
+PACKAGE_DIR="/var/packages/${PACKAGE_NAME}"
+TARGET_DIR="${PACKAGE_DIR}/target"
+N8N_USER="n8n-user"
+LOG_FILE="/tmp/n8n_install.log"
+
+# Logging function
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+log_error() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $1" | tee -a "$LOG_FILE" >&2
+}
+
+log_success() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] SUCCESS: $1" | tee -a "$LOG_FILE"
+}
+
+# =============================================================================
+# PRE-INSTALLATION
+# =============================================================================
+preinst() {
+    log "=========================================="
+    log "PRE-INSTALLATION - Starting"
+    log "=========================================="
+
+    log "Checking environment..."
+    log "User: $(whoami)"
+    log "Package: $PACKAGE_NAME"
+    log "Target: $TARGET_DIR"
+
+    # Check that Docker is installed
+    log "Checking Docker..."
+    if ! command -v docker &> /dev/null; then
+        log_error "Docker/Container Manager is not installed"
+        log_error "Please install Container Manager from Package Center before installing n8n"
+        exit 1
+    fi
+
+    DOCKER_VERSION=$(docker --version 2>&1)
+    log_success "Docker found: $DOCKER_VERSION"
+
+    # Check Docker Compose
+    log "Checking Docker Compose..."
+    if command -v docker-compose &> /dev/null; then
+        COMPOSE_VERSION=$(docker-compose --version 2>&1)
+        log_success "docker-compose found: $COMPOSE_VERSION"
+    elif docker compose version &> /dev/null 2>&1; then
+        COMPOSE_VERSION=$(docker compose version 2>&1)
+        log_success "docker compose found: $COMPOSE_VERSION"
+    else
+        log_error "Docker Compose is not available"
+        log_error "Please check that Container Manager is properly installed and up to date"
+        exit 1
+    fi
+
+    # Check if port 5678 is available
+    log "Checking port 5678..."
+    if netstat -tuln 2>/dev/null | grep -q ":5678 "; then
+        log_error "Port 5678 is already in use"
+        log "You can change the port after installation in the .env file"
+    else
+        log_success "Port 5678 available"
+    fi
+
+    # Check disk space
+    log "Checking disk space..."
+    AVAILABLE_SPACE=$(df -h "$PACKAGE_DIR" 2>/dev/null | awk 'NR==2 {print $4}' || echo "unknown")
+    log "Available space: $AVAILABLE_SPACE"
+
+    log_success "PRE-INSTALLATION - Completed successfully"
+    exit 0
+}
+
+# =============================================================================
+# POST-INSTALLATION
+# =============================================================================
+postinst() {
+    log "=========================================="
+    log "POST-INSTALLATION - Starting"
+    log "=========================================="
+
+    # Create directory structure
+    log "Creating directory structure..."
+    mkdir -p "${TARGET_DIR}/data"
+    log "  - ${TARGET_DIR}/data created"
+
+    mkdir -p "${TARGET_DIR}/files"
+    log "  - ${TARGET_DIR}/files created"
+
+    mkdir -p "${TARGET_DIR}/db"
+    log "  - ${TARGET_DIR}/db created"
+
+    mkdir -p "${TARGET_DIR}/backup"
+    log "  - ${TARGET_DIR}/backup created"
+
+    # Set permissions
+    log "Configuring permissions..."
+    if chown -R ${N8N_USER}:users "${TARGET_DIR}" 2>&1 | tee -a "$LOG_FILE"; then
+        log_success "User permissions set"
+    else
+        log_error "Failed to set user permissions"
+    fi
+
+    if chmod -R 755 "${TARGET_DIR}" 2>&1 | tee -a "$LOG_FILE"; then
+        log_success "Read/write permissions set"
+    else
+        log_error "Failed to set permissions"
+    fi
+
+    # Generate encryption key if not exists
+    if [ ! -f "${TARGET_DIR}/.env" ]; then
+        log "Generating initial configuration (.env)..."
+
+        log "Generating encryption key (64 characters)..."
+        ENCRYPTION_KEY=$(openssl rand -hex 32 2>&1)
+        if [ $? -eq 0 ]; then
+            log_success "Encryption key generated: ${ENCRYPTION_KEY:0:16}...${ENCRYPTION_KEY: -8}"
+        else
+            log_error "Failed to generate encryption key"
+            exit 1
+        fi
+
+        log "Generating PostgreSQL password..."
+        POSTGRES_PASSWORD=$(openssl rand -base64 24 | tr -d "=+/" | cut -c1-24)
+        if [ $? -eq 0 ]; then
+            log_success "PostgreSQL password generated: ${POSTGRES_PASSWORD:0:4}...${POSTGRES_PASSWORD: -4}"
+        else
+            log_error "Failed to generate PostgreSQL password"
+            exit 1
+        fi
+
+        log "Writing .env file..."
+        cat > "${TARGET_DIR}/.env" <<EOF
+# n8n configuration for Synology DSM - Automatically generated on $(date)
+N8N_PORT=5678
+N8N_HOST=localhost
+N8N_PROTOCOL=http
+WEBHOOK_URL=http://localhost:5678/
+TIMEZONE=Europe/Paris
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+N8N_ENCRYPTION_KEY=${ENCRYPTION_KEY}
+N8N_BASIC_AUTH_ACTIVE=false
+N8N_BASIC_AUTH_USER=admin
+N8N_BASIC_AUTH_PASSWORD=
+EOF
+
+        if [ $? -eq 0 ]; then
+            log_success ".env file created successfully"
+        else
+            log_error "Failed to create .env file"
+            exit 1
+        fi
+
+        log "Configuring .env file permissions..."
+        chown ${N8N_USER}:users "${TARGET_DIR}/.env"
+        chmod 600 "${TARGET_DIR}/.env"
+        log_success ".env permissions configured (600)"
+
+        log "⚠️  IMPORTANT: Back up the .env file!"
+        log "Location: ${TARGET_DIR}/.env"
+    else
+        log "Existing .env file found, keeping current configuration"
+    fi
+
+    # Copy docker-compose.yml if not exists
+    log "Copying docker-compose.yml file..."
+    if [ ! -f "${TARGET_DIR}/docker-compose.yml" ]; then
+        if [ -f "${PACKAGE_DIR}/docker-compose.yml" ]; then
+            if cp "${PACKAGE_DIR}/docker-compose.yml" "${TARGET_DIR}/" 2>&1 | tee -a "$LOG_FILE"; then
+                log_success "docker-compose.yml copied"
+                chown ${N8N_USER}:users "${TARGET_DIR}/docker-compose.yml"
+            else
+                log_error "Failed to copy docker-compose.yml"
+                exit 1
+            fi
+        else
+            log_error "Source docker-compose.yml file not found: ${PACKAGE_DIR}/docker-compose.yml"
+            exit 1
+        fi
+    else
+        log "Existing docker-compose.yml found, keeping it"
+    fi
+
+    # Copy .env.example
+    log "Copying .env.example file..."
+    if [ -f "${PACKAGE_DIR}/.env.example" ]; then
+        if cp "${PACKAGE_DIR}/.env.example" "${TARGET_DIR}/.env.example" 2>&1 | tee -a "$LOG_FILE"; then
+            log_success ".env.example copied"
+        fi
+    fi
+
+    # Copy backup script
+    log "Copying backup script..."
+    if [ -f "${PACKAGE_DIR}/scripts/backup.sh" ]; then
+        if cp "${PACKAGE_DIR}/scripts/backup.sh" "${TARGET_DIR}/" 2>&1 | tee -a "$LOG_FILE"; then
+            chmod +x "${TARGET_DIR}/backup.sh"
+            chown ${N8N_USER}:users "${TARGET_DIR}/backup.sh"
+            log_success "Backup script copied and made executable"
+        else
+            log_error "Failed to copy backup script"
+        fi
+    else
+        log "Backup script not found, skipped"
+    fi
+
+    # Copy reverse proxy config
+    log "Copying reverse proxy configuration..."
+    if [ -f "${PACKAGE_DIR}/conf/nginx-reverse-proxy.conf" ]; then
+        if cp "${PACKAGE_DIR}/conf/nginx-reverse-proxy.conf" "${TARGET_DIR}/" 2>&1 | tee -a "$LOG_FILE"; then
+            log_success "Reverse proxy configuration copied"
+            log "Configuration available at: ${TARGET_DIR}/nginx-reverse-proxy.conf"
+        fi
+    fi
+
+    # Display summary
+    log "=========================================="
+    log "INSTALLATION SUMMARY"
+    log "=========================================="
+    log "Installation successful!"
+    log ""
+    log "Files installed in: ${TARGET_DIR}"
+    log "  - docker-compose.yml (Docker configuration)"
+    log "  - .env (n8n configuration - BACK UP THIS FILE!)"
+    log "  - backup.sh (backup script)"
+    log "  - nginx-reverse-proxy.conf (reverse proxy config example)"
+    log ""
+    log "Next steps:"
+    log "  1. Start n8n from Package Center"
+    log "  2. Access n8n: http://YOUR_NAS_IP:5678"
+    log "  3. Create your administrator account"
+    log ""
+    log "Installation logs: $LOG_FILE"
+    log_success "POST-INSTALLATION - Completed successfully"
+
+    exit 0
+}
+
+# =============================================================================
+# PRE-UNINSTALLATION
+# =============================================================================
+preuninst() {
+    log "=========================================="
+    log "PRE-UNINSTALLATION - Starting"
+    log "=========================================="
+
+    # Stop Docker containers
+    if [ -f "${TARGET_DIR}/docker-compose.yml" ]; then
+        log "Stopping n8n Docker containers..."
+        cd "${TARGET_DIR}"
+
+        if command -v docker-compose &> /dev/null; then
+            log "Using docker-compose..."
+            if docker-compose down 2>&1 | tee -a "$LOG_FILE"; then
+                log_success "Containers stopped with docker-compose"
+            else
+                log_error "Failed to stop containers with docker-compose"
+            fi
+        elif command -v docker &> /dev/null; then
+            log "Using docker compose..."
+            if docker compose down 2>&1 | tee -a "$LOG_FILE"; then
+                log_success "Containers stopped with docker compose"
+            else
+                log_error "Failed to stop containers with docker compose"
+            fi
+        else
+            log_error "No Docker Compose command available"
+        fi
+    else
+        log "docker-compose.yml file not found, skipped"
+    fi
+
+    log_success "PRE-UNINSTALLATION - Completed"
+    exit 0
+}
+
+# =============================================================================
+# POST-UNINSTALLATION
+# =============================================================================
+postuninst() {
+    log "=========================================="
+    log "POST-UNINSTALLATION - Starting"
+    log "=========================================="
+
+    # Remove Docker images (optional)
+    log "n8n and PostgreSQL Docker images are NOT removed"
+    log "To remove them manually:"
+    log "  docker rmi n8nio/n8n postgres:17-alpine"
+
+    # Keep data directories
+    log "=========================================="
+    log "DATA PRESERVED"
+    log "=========================================="
+    log "n8n data has been preserved in: ${TARGET_DIR}"
+    log "  - ${TARGET_DIR}/data (workflows, credentials)"
+    log "  - ${TARGET_DIR}/db (PostgreSQL database)"
+    log "  - ${TARGET_DIR}/backup (backups)"
+    log ""
+    log "To completely remove all data:"
+    log "  sudo rm -rf ${TARGET_DIR}"
+    log ""
+    log_success "POST-UNINSTALLATION - Completed"
+
+    exit 0
+}
+
+# =============================================================================
+# PRE-UPGRADE
+# =============================================================================
+preupgrade() {
+    log "=========================================="
+    log "PRE-UPGRADE - Starting"
+    log "=========================================="
+
+    # Backup before upgrade
+    if [ -f "${TARGET_DIR}/backup.sh" ]; then
+        log "Creating automatic backup before upgrade..."
+        if bash "${TARGET_DIR}/backup.sh" 2>&1 | tee -a "$LOG_FILE"; then
+            log_success "Backup created successfully"
+        else
+            log_error "Backup failed"
+            log "Upgrade cancelled to prevent data loss"
+            exit 1
+        fi
+    else
+        log "Backup script not found: ${TARGET_DIR}/backup.sh"
+        log "⚠️  No automatic backup created"
+        log "It is strongly recommended to manually back up ${TARGET_DIR}/data/"
+    fi
+
+    log_success "PRE-UPGRADE - Completed"
+    exit 0
+}
+
+# =============================================================================
+# POST-UPGRADE
+# =============================================================================
+postupgrade() {
+    log "=========================================="
+    log "POST-UPGRADE - Starting"
+    log "=========================================="
+
+    # Update Docker images
+    if [ -f "${TARGET_DIR}/docker-compose.yml" ]; then
+        log "Updating Docker images..."
+        cd "${TARGET_DIR}"
+
+        if command -v docker-compose &> /dev/null; then
+            log "Downloading new images with docker-compose..."
+            if docker-compose pull 2>&1 | tee -a "$LOG_FILE"; then
+                log_success "Images downloaded"
+
+                log "Restarting containers..."
+                if docker-compose up -d 2>&1 | tee -a "$LOG_FILE"; then
+                    log_success "Containers restarted"
+                else
+                    log_error "Failed to restart containers"
+                fi
+            else
+                log_error "Failed to download images"
+            fi
+        elif command -v docker &> /dev/null; then
+            log "Downloading new images with docker compose..."
+            if docker compose pull 2>&1 | tee -a "$LOG_FILE"; then
+                log_success "Images downloaded"
+
+                log "Restarting containers..."
+                if docker compose up -d 2>&1 | tee -a "$LOG_FILE"; then
+                    log_success "Containers restarted"
+                else
+                    log_error "Failed to restart containers"
+                fi
+            else
+                log_error "Failed to download images"
+            fi
+        else
+            log_error "Docker Compose not found"
+        fi
+    else
+        log_error "docker-compose.yml file not found: ${TARGET_DIR}/docker-compose.yml"
+    fi
+
+    # Reset permissions
+    log "Resetting permissions..."
+    if chown -R ${N8N_USER}:users "${TARGET_DIR}" 2>&1 | tee -a "$LOG_FILE"; then
+        log_success "Permissions reset"
+    else
+        log_error "Failed to reset permissions"
+    fi
+
+    log "=========================================="
+    log "UPGRADE COMPLETED"
+    log "=========================================="
+    log "Logs: $LOG_FILE"
+    log_success "POST-UPGRADE - Completed"
+
+    exit 0
+}
+
+case $1 in
+    preinst)
+        preinst
+        ;;
+    postinst)
+        postinst
+        ;;
+    preuninst)
+        preuninst
+        ;;
+    postuninst)
+        postuninst
+        ;;
+    preupgrade)
+        preupgrade
+        ;;
+    postupgrade)
+        postupgrade
+        ;;
+    *)
+        exit 1
+        ;;
+esac

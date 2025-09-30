@@ -1,0 +1,31 @@
+{
+  "name": "n8n-synology-package",
+  "version": "1.0.0",
+  "description": "n8n workflow automation tool package for Synology DSM 7+",
+  "main": "index.js",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "package": "node scripts/package.js",
+    "update-repo": "node scripts/update-repo.js",
+    "release": "yarn build && yarn package && yarn update-repo",
+    "clean": "rm -rf dist/*.spk",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "n8n",
+    "synology",
+    "dsm",
+    "package",
+    "workflow",
+    "automation"
+  ],
+  "author": "josedacosta",
+  "license": "MIT",
+  "devDependencies": {
+    "archiver": "^6.0.0",
+    "fs-extra": "^11.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

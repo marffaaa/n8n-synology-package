@@ -1,0 +1,12 @@
+{
+    "webman": {
+        "title": "n8n",
+        "desc": "Workflow Automation Tool",
+        "icon": "images/n8n-{0}.png",
+        "type": "url",
+        "protocol": "http",
+        "port": "5678",
+        "url": "/",
+        "allUsers": true
+    }
+}

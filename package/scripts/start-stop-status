@@ -1,0 +1,290 @@
+#!/bin/bash
+
+# =============================================================================
+# n8n service management script (start/stop/status)
+# =============================================================================
+
+PACKAGE_NAME="n8n"
+PACKAGE_DIR="/var/packages/${PACKAGE_NAME}"
+TARGET_DIR="${PACKAGE_DIR}/target"
+COMPOSE_FILE="${TARGET_DIR}/docker-compose.yml"
+LOG_FILE="/tmp/n8n_service.log"
+
+# Logging function
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+log_error() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $1" | tee -a "$LOG_FILE" >&2
+}
+
+log_success() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] SUCCESS: $1" | tee -a "$LOG_FILE"
+}
+
+# =============================================================================
+# START
+# =============================================================================
+start_daemon() {
+    log "=========================================="
+    log "STARTING n8n - Begin"
+    log "=========================================="
+
+    # Check that docker-compose.yml exists
+    if [ ! -f "${COMPOSE_FILE}" ]; then
+        log_error "docker-compose.yml not found: ${COMPOSE_FILE}"
+        log_error "Check that installation completed successfully"
+        exit 1
+    fi
+    log_success "docker-compose.yml file found"
+
+    # Check .env file
+    if [ ! -f "${TARGET_DIR}/.env" ]; then
+        log_error ".env file not found: ${TARGET_DIR}/.env"
+        log_error "Reinstall the package or create the .env file manually"
+        exit 1
+    fi
+    log_success ".env file found"
+
+    # Go to target directory
+    cd "${TARGET_DIR}" || {
+        log_error "Cannot access directory: ${TARGET_DIR}"
+        exit 1
+    }
+    log "Working directory: $(pwd)"
+
+    # Detect available Docker Compose command
+    log "Detecting Docker Compose..."
+    if command -v docker-compose &> /dev/null; then
+        COMPOSE_CMD="docker-compose"
+        COMPOSE_VERSION=$(docker-compose --version 2>&1)
+        log_success "docker-compose found: $COMPOSE_VERSION"
+    elif command -v docker &> /dev/null && docker compose version &> /dev/null 2>&1; then
+        COMPOSE_CMD="docker compose"
+        COMPOSE_VERSION=$(docker compose version 2>&1)
+        log_success "docker compose found: $COMPOSE_VERSION"
+    else
+        log_error "Docker Compose is not available"
+        log_error "Install Container Manager from Package Center"
+        exit 1
+    fi
+
+    # Check if containers are already running
+    log "Checking container status..."
+    if ${COMPOSE_CMD} ps 2>/dev/null | grep -q "Up"; then
+        log "n8n is already running"
+        ${COMPOSE_CMD} ps | tee -a "$LOG_FILE"
+        log_success "START - Containers already active"
+        exit 0
+    fi
+    log "No active containers detected"
+
+    # Start containers
+    log "Starting Docker Compose containers..."
+    log "Command: ${COMPOSE_CMD} up -d"
+
+    if ${COMPOSE_CMD} up -d 2>&1 | tee -a "$LOG_FILE"; then
+        log_success "Containers started"
+
+        # Wait for containers to start
+        log "Waiting for complete startup (5 seconds)..."
+        sleep 5
+
+        # Check status
+        log "Checking container status..."
+        ${COMPOSE_CMD} ps | tee -a "$LOG_FILE"
+
+        # Get NAS IP
+        NAS_IP=$(hostname -i 2>/dev/null || echo "YOUR_NAS_IP")
+
+        log "=========================================="
+        log_success "n8n started successfully!"
+        log "=========================================="
+        log ""
+        log "Access n8n at:"
+        log "  http://${NAS_IP}:5678"
+        log ""
+        log "To view logs in real time:"
+        log "  cd ${TARGET_DIR}"
+        log "  ${COMPOSE_CMD} logs -f"
+        log ""
+        log "Startup logs: $LOG_FILE"
+        log "=========================================="
+
+        exit 0
+    else
+        log_error "Failed to start containers"
+        log "Displaying recent logs..."
+        ${COMPOSE_CMD} logs --tail=50 | tee -a "$LOG_FILE"
+        log_error "START - FAILED"
+        exit 1
+    fi
+}
+
+# =============================================================================
+# STOP
+# =============================================================================
+stop_daemon() {
+    log "=========================================="
+    log "STOPPING n8n - Begin"
+    log "=========================================="
+
+    if [ ! -f "${COMPOSE_FILE}" ]; then
+        log_error "docker-compose.yml not found: ${COMPOSE_FILE}"
+        exit 1
+    fi
+    log_success "docker-compose.yml file found"
+
+    cd "${TARGET_DIR}" || {
+        log_error "Cannot access directory: ${TARGET_DIR}"
+        exit 1
+    }
+    log "Working directory: $(pwd)"
+
+    # Detect Docker Compose
+    log "Detecting Docker Compose..."
+    if command -v docker-compose &> /dev/null; then
+        COMPOSE_CMD="docker-compose"
+        log_success "docker-compose found"
+    elif command -v docker &> /dev/null && docker compose version &> /dev/null 2>&1; then
+        COMPOSE_CMD="docker compose"
+        log_success "docker compose found"
+    else
+        log_error "Docker Compose is not available"
+        exit 1
+    fi
+
+    # Check if containers are running
+    log "Checking container status..."
+    if ! ${COMPOSE_CMD} ps 2>/dev/null | grep -q "Up"; then
+        log "n8n is not running"
+        log_success "STOP - Containers already stopped"
+        exit 0
+    fi
+
+    # Display status before stopping
+    log "Current container status:"
+    ${COMPOSE_CMD} ps | tee -a "$LOG_FILE"
+
+    # Stop containers
+    log "Stopping containers..."
+    log "Command: ${COMPOSE_CMD} down"
+
+    if ${COMPOSE_CMD} down 2>&1 | tee -a "$LOG_FILE"; then
+        log_success "Containers stopped successfully"
+
+        # Verify everything is stopped
+        log "Final verification..."
+        sleep 2
+        ${COMPOSE_CMD} ps 2>&1 | tee -a "$LOG_FILE"
+
+        log "=========================================="
+        log_success "n8n stopped successfully"
+        log "=========================================="
+        log "Stop logs: $LOG_FILE"
+        exit 0
+    else
+        log_error "Failed to stop containers"
+        log_error "STOP - FAILED"
+        exit 1
+    fi
+}
+
+# =============================================================================
+# STATUS
+# =============================================================================
+daemon_status() {
+    log "=========================================="
+    log "STATUS n8n - Checking"
+    log "=========================================="
+
+    if [ ! -f "${COMPOSE_FILE}" ]; then
+        log_error "docker-compose.yml not found"
+        log_error "n8n is not installed or installation is incomplete"
+        exit 1
+    fi
+    log_success "docker-compose.yml file found"
+
+    cd "${TARGET_DIR}" || {
+        log_error "Cannot access directory: ${TARGET_DIR}"
+        exit 1
+    }
+    log "Working directory: $(pwd)"
+
+    # Detect Docker Compose
+    log "Detecting Docker Compose..."
+    if command -v docker-compose &> /dev/null; then
+        COMPOSE_CMD="docker-compose"
+        log_success "docker-compose found"
+    elif command -v docker &> /dev/null && docker compose version &> /dev/null 2>&1; then
+        COMPOSE_CMD="docker compose"
+        log_success "docker compose found"
+    else
+        log_error "Docker Compose is not available"
+        exit 1
+    fi
+
+    # Check status
+    log "Checking container status..."
+    log ""
+
+    ${COMPOSE_CMD} ps 2>&1 | tee -a "$LOG_FILE"
+
+    log ""
+    if ${COMPOSE_CMD} ps 2>/dev/null | grep -q "Up"; then
+        log_success "n8n is RUNNING"
+
+        # Get NAS IP
+        NAS_IP=$(hostname -i 2>/dev/null || echo "YOUR_NAS_IP")
+
+        # Read port from .env
+        if [ -f "${TARGET_DIR}/.env" ]; then
+            N8N_PORT=$(grep "^N8N_PORT=" "${TARGET_DIR}/.env" 2>/dev/null | cut -d'=' -f2 || echo "5678")
+        else
+            N8N_PORT="5678"
+        fi
+
+        log ""
+        log "Access n8n at:"
+        log "  http://${NAS_IP}:${N8N_PORT}"
+        log ""
+        log "To view logs:"
+        log "  cd ${TARGET_DIR}"
+        log "  ${COMPOSE_CMD} logs -f"
+        log ""
+        log "Status logs: $LOG_FILE"
+
+        exit 0
+    else
+        log "n8n is NOT running"
+        log ""
+        log "To start n8n:"
+        log "  - Via Package Center: Click 'Open'"
+        log "  - Via SSH: sudo synopkg start n8n"
+        log ""
+        log "Status logs: $LOG_FILE"
+
+        exit 1
+    fi
+}
+
+case "$1" in
+    start)
+        start_daemon
+        ;;
+    stop)
+        stop_daemon
+        ;;
+    status)
+        daemon_status
+        ;;
+    restart)
+        stop_daemon
+        start_daemon
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|status|restart}"
+        exit 1
+        ;;
+esac

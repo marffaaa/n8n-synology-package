@@ -1,0 +1,152 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Update version in INFO file
+        run: |
+          sed -i 's/^version=".*"/version="${{ steps.get_version.outputs.VERSION }}"/' package/INFO
+
+      - name: Clean previous builds
+        run: |
+          rm -rf dist/
+          mkdir -p dist/
+
+      - name: Build package
+        run: yarn build
+
+      - name: Create .spk package
+        run: yarn package
+
+      - name: Calculate checksums
+        id: checksums
+        run: |
+          cd dist
+          SPK_FILE="n8n-${{ steps.get_version.outputs.VERSION }}-noarch.spk"
+          MD5=$(md5sum "$SPK_FILE" | awk '{print $1}')
+          SHA256=$(sha256sum "$SPK_FILE" | awk '{print $1}')
+          echo "SPK_FILE=$SPK_FILE" >> $GITHUB_OUTPUT
+          echo "MD5=$MD5" >> $GITHUB_OUTPUT
+          echo "SHA256=$SHA256" >> $GITHUB_OUTPUT
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          if [ -f CHANGELOG.md ]; then
+            # Extract changelog section for this version
+            CHANGELOG=$(awk -v ver="$VERSION" '
+              /^## / {
+                if (found) exit;
+                if ($0 ~ ver) found=1;
+                next;
+              }
+              found {print}
+            ' CHANGELOG.md)
+
+            if [ -z "$CHANGELOG" ]; then
+              CHANGELOG="Release version $VERSION"
+            fi
+          else
+            CHANGELOG="Release version $VERSION"
+          fi
+
+          # Save to file to preserve formatting
+          echo "$CHANGELOG" > /tmp/release_notes.txt
+          echo "CHANGELOG_FILE=/tmp/release_notes.txt" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ steps.get_version.outputs.TAG_NAME }}
+          body: |
+            # n8n Synology Package ${{ steps.get_version.outputs.TAG_NAME }}
+
+            ## Installation
+
+            1. Download the `.spk` file below
+            2. Open Synology DSM Package Center
+            3. Click "Manual Install"
+            4. Select the downloaded `.spk` file
+            5. Follow the installation wizard
+
+            ## Requirements
+
+            - Synology DSM 7.0 or higher
+            - Container Manager installed
+            - Minimum 2GB RAM (4GB recommended)
+            - Port 5678 available
+
+            ## Checksums
+
+            - **MD5**: `${{ steps.checksums.outputs.MD5 }}`
+            - **SHA256**: `${{ steps.checksums.outputs.SHA256 }}`
+
+            ## Changelog
+
+            ${{ steps.changelog.outputs.CHANGELOG_FILE && format('{0}', steps.changelog.outputs.CHANGELOG_FILE) }}
+
+            ## Documentation
+
+            - [Installation Guide](https://github.com/${{ github.repository }}/blob/main/README.md)
+            - [Docker Architecture](https://github.com/${{ github.repository }}/blob/main/INSTALLATION-DOCKER.md)
+            - [Troubleshooting](https://github.com/${{ github.repository }}/blob/main/docs/log-recovery.md)
+
+            ## Support
+
+            For issues and questions, please open an issue on [GitHub](https://github.com/${{ github.repository }}/issues).
+          files: |
+            dist/${{ steps.checksums.outputs.SPK_FILE }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Synology repository index
+        run: |
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${{ steps.get_version.outputs.TAG_NAME }}/${{ steps.checksums.outputs.SPK_FILE }}"
+          node scripts/update-repository-index.js "${{ steps.get_version.outputs.VERSION }}" "$DOWNLOAD_URL"
+
+      - name: Commit and push updated repository index
+        run: |
+          git config user.name "Jose DA COSTA"
+          git config user.email "contact@josedacosta.info"
+          git add docs/index.json
+          git commit -m "chore: update repository index for v${{ steps.get_version.outputs.VERSION }}" || echo "No changes to commit"
+          git push origin HEAD:main || echo "Push failed, but continuing..."
+
+      - name: Update latest tag
+        run: |
+          git tag -f latest
+          git push -f origin latest
