@@ -197,12 +197,13 @@ function updateRepository() {
   }
 
   // Add new package
+  const spkDownloadUrl = `https://josedacosta.github.io/n8n-synology-package/${spkFileName}`;
   const newPackage = {
     package: packageInfo.package,
     version: packageInfo.version,
     dname: packageInfo.displayname,
     desc: packageInfo.description,
-    link: packageInfo.maintainer_url,
+    link: spkDownloadUrl,
     download_count: 0,
     thumbnail: [icon72Url, icon256Url],
     snapshot: snapshots,

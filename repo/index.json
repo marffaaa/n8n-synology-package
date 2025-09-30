@@ -5,7 +5,7 @@
       "version": "1.0.0",
       "dname": "n8n",
       "desc": "n8n is a powerful workflow automation tool that connects your apps and services together. Create complex automations without coding - integrate APIs, databases, webhooks, and 400+ apps. Features include visual workflow editor, error handling, scheduling, webhooks, custom code execution, and self-hosting for complete data control. Perfect for DevOps, sales automation, data processing, and business process automation.",
-      "link": "https://github.com/josedacosta/n8n-synology-package",
+      "link": "https://josedacosta.github.io/n8n-synology-package/n8n-1.0.0-noarch.spk",
       "download_count": 0,
       "thumbnail": [
         "https://josedacosta.github.io/n8n-synology-package/packages/n8n/1.0.0/icon_72.png",
