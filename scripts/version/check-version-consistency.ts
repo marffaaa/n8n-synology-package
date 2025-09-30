@@ -43,19 +43,18 @@ interface Versions {
     packageJson?: string;
     info?: string;
     changelog?: string;
-    build?: string | null;
-    repoPackages?: string | null;
+    build?: string;
+    repoPackages?: string;
     readmeExamples?: string[];
     changelogUrls?: string[];
     upgradingVersions?: string[];
     securityVersions?: string[];
-    packageJsFallback?: string | null;
+    packageJsFallback?: string;
 }
 
 interface PackageJson {
     version: string;
-
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 interface RepoPackagesJson {
@@ -63,7 +62,7 @@ interface RepoPackagesJson {
         name?: string;
         package?: string;
         version?: string;
-        [key: string]: any;
+        [key: string]: unknown;
     }>;
 }
 
@@ -284,10 +283,37 @@ function getPackageJsFallback(): string | null {
     }
 
     const content = fs.readFileSync(packageJsPath, 'utf8');
-    const fallbackPattern = /packageInfo\.version\s*\|\|\s*['"](\d+\.\d+\.\d+)['"]/;
-    const match = content.match(fallbackPattern);
+    // Match both common patterns for fallback version
+    const patterns = [
+        /packageInfo\.version\s*\|\|\s*['"](\d+\.\d+\.\d+)['"]/,
+        /version:\s*packageInfo\.version\s*\|\|\s*['"](\d+\.\d+\.\d+)['"]/,
+        /const\s+version\s*=.*?\|\|\s*['"](\d+\.\d+\.\d+)['"]/
+    ];
 
-    return match ? match[1] : null;
+    for (const pattern of patterns) {
+        const match = content.match(pattern);
+        if (match) {
+            return match[1];
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Compare semantic versions
+ */
+function compareVersions(v1: string, v2: string): number {
+    const parts1 = v1.split('.').map(Number);
+    const parts2 = v2.split('.').map(Number);
+
+    for (let i = 0; i < 3; i++) {
+        const p1 = parts1[i] || 0;
+        const p2 = parts2[i] || 0;
+        if (p1 > p2) return 1;
+        if (p1 < p2) return -1;
+    }
+    return 0;
 }
 
 /**
@@ -300,6 +326,7 @@ function verifyVersions(): void {
     console.log('');
 
     let hasErrors = false;
+    let hasWarnings = false;
     const versions: Versions = {};
 
     // Check package.json
@@ -324,8 +351,9 @@ function verifyVersions(): void {
 
     // Check CHANGELOG.md
     try {
-        versions.changelog = getChangelogVersion();
-        if (versions.changelog) {
+        const changelogVersion = getChangelogVersion();
+        if (changelogVersion) {
+            versions.changelog = changelogVersion;
             log.info(`CHANGELOG.md latest version: ${versions.changelog}`);
         } else {
             log.warning('No version found in CHANGELOG.md');
@@ -337,8 +365,9 @@ function verifyVersions(): void {
 
     // Check build/INFO if exists
     try {
-        versions.build = checkBuildVersion();
-        if (versions.build) {
+        const buildVersion = checkBuildVersion();
+        if (buildVersion) {
+            versions.build = buildVersion;
             log.info(`dist/build/INFO version: ${versions.build}`);
         }
     } catch (error) {
@@ -348,8 +377,9 @@ function verifyVersions(): void {
 
     // Check repo/packages.json
     try {
-        versions.repoPackages = getRepoPackagesVersion();
-        if (versions.repoPackages) {
+        const repoVersion = getRepoPackagesVersion();
+        if (repoVersion) {
+            versions.repoPackages = repoVersion;
             log.info(`repo/packages.json version: ${versions.repoPackages}`);
         }
     } catch (error) {
@@ -361,7 +391,7 @@ function verifyVersions(): void {
     try {
         versions.readmeExamples = getReadmeVersionExamples();
         if (versions.readmeExamples.length > 0) {
-            const uniqueVersions = [...new Set(versions.readmeExamples)];
+            const uniqueVersions = Array.from(new Set(versions.readmeExamples));
             log.info(`README.md version examples: ${uniqueVersions.join(', ')}`);
         }
     } catch (error) {
@@ -373,7 +403,7 @@ function verifyVersions(): void {
     try {
         versions.changelogUrls = getChangelogUrls();
         if (versions.changelogUrls.length > 0) {
-            const uniqueUrls = [...new Set(versions.changelogUrls)];
+            const uniqueUrls = Array.from(new Set(versions.changelogUrls));
             log.info(`CHANGELOG.md URL versions: ${uniqueUrls.join(', ')}`);
         }
     } catch (error) {
@@ -405,8 +435,9 @@ function verifyVersions(): void {
 
     // Check scripts/package.js fallback version
     try {
-        versions.packageJsFallback = getPackageJsFallback();
-        if (versions.packageJsFallback) {
+        const fallbackVersion = getPackageJsFallback();
+        if (fallbackVersion) {
+            versions.packageJsFallback = fallbackVersion;
             log.info(`scripts/package.js fallback: ${versions.packageJsFallback}`);
         }
     } catch (error) {
@@ -433,23 +464,12 @@ function verifyVersions(): void {
         if (versions.changelog === versions.packageJson) {
             log.success(`CHANGELOG.md matches current version (${versions.changelog})`);
         } else {
-            // Check if CHANGELOG has a newer version (might be preparing a release)
-            const changelogParts = versions.changelog.split('.').map(Number);
-            const packageParts = versions.packageJson.split('.').map(Number);
+            const comparison = compareVersions(versions.changelog, versions.packageJson);
 
-            let isNewer = false;
-            for (let i = 0; i < 3; i++) {
-                if (changelogParts[i] > packageParts[i]) {
-                    isNewer = true;
-                    break;
-                } else if (changelogParts[i] < packageParts[i]) {
-                    break;
-                }
-            }
-
-            if (isNewer) {
+            if (comparison > 0) {
                 log.warning(`CHANGELOG.md has newer version (${versions.changelog}) than package.json (${versions.packageJson})`);
                 log.warning('This might be intentional if preparing a release');
+                hasWarnings = true;
             } else {
                 log.error(`CHANGELOG.md version (${versions.changelog}) is behind package.json (${versions.packageJson})`);
                 hasErrors = true;
@@ -464,6 +484,7 @@ function verifyVersions(): void {
         } else {
             log.warning(`Build version (${versions.build}) differs from source (${versions.packageJson})`);
             log.warning('Run "yarn build" to update the build');
+            hasWarnings = true;
         }
     }
 
@@ -483,6 +504,7 @@ function verifyVersions(): void {
         if (outdatedReadmeVersions.length > 0) {
             log.warning(`README.md contains outdated version examples: ${outdatedReadmeVersions.join(', ')}`);
             log.warning('Consider updating documentation examples');
+            hasWarnings = true;
         }
     }
 
@@ -502,7 +524,10 @@ function verifyVersions(): void {
             log.success('UPGRADING.md contains migration guides for known versions');
         }
         // Check if future versions are documented
-        const futureVersions = versions.upgradingVersions.filter(v => v > (versions.packageJson || '1.0.0'));
+        const futureVersions = versions.upgradingVersions.filter(v => {
+            if (!versions.packageJson) return false;
+            return compareVersions(v, versions.packageJson) > 0;
+        });
         if (futureVersions.length > 0) {
             log.info(`UPGRADING.md documents future versions: ${futureVersions.join(', ')}`);
         }
@@ -513,6 +538,7 @@ function verifyVersions(): void {
         const majorMinor = versions.packageJson.split('.').slice(0, 2).join('.');
         if (!versions.securityVersions.some(v => v.startsWith(majorMinor))) {
             log.warning(`SECURITY.md may need update for current version ${majorMinor}.x`);
+            hasWarnings = true;
         }
     }
 
@@ -521,6 +547,7 @@ function verifyVersions(): void {
         if (versions.packageJsFallback !== versions.packageJson) {
             log.warning(`scripts/package.js fallback (${versions.packageJsFallback}) differs from current version (${versions.packageJson})`);
             log.warning('Consider updating the fallback version in scripts/package.js');
+            hasWarnings = true;
         } else {
             log.success(`scripts/package.js fallback matches current version`);
         }
@@ -544,8 +571,22 @@ function verifyVersions(): void {
         console.log('To fix version mismatch:');
         console.log('1. Update package/INFO to match package.json');
         console.log('2. Run "yarn build && yarn package" to rebuild');
+        if (versions.repoPackages && versions.repoPackages !== versions.packageJson) {
+            console.log('3. Update repo/packages.json with the correct version');
+        }
         console.log('');
         process.exit(1);
+    } else if (hasWarnings) {
+        log.warning('Version consistency check PASSED WITH WARNINGS');
+        console.log('');
+        console.log('Review the warnings above and update if necessary.');
+
+        if (!versions.build || versions.build !== versions.packageJson) {
+            console.log('');
+            console.log('Note: Run "yarn build && yarn package" to create/update the package');
+        }
+        console.log('');
+        process.exit(0);
     } else {
         log.success('Version consistency check PASSED');
 
@@ -554,6 +595,7 @@ function verifyVersions(): void {
             console.log('Note: Run "yarn build && yarn package" to create/update the package');
         }
         console.log('');
+        process.exit(0);
     }
 }
 
