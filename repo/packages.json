@@ -36,7 +36,7 @@
       "type": 0,
       "icon": "https://josedacosta.github.io/n8n-synology-package/packages/n8n/1.0.0/icon_72.png",
       "size": 44032,
-      "checksum": "677c00bf1fa7e9e4fba996b31c68f10b",
+      "checksum": "920223d7b9d1cc5856eab68f13a55d53",
       "os_min_ver": "7.0-41890",
       "arch": "noarch",
       "changelog": "Initial release for Synology DSM 7+",

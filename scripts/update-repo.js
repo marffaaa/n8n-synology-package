@@ -107,7 +107,9 @@ function updateRepository() {
 
   logSection('Calculating package metadata...');
   const fileSize = getFileSize(spkFilePath);
-  const checksum = calculateMD5(spkFilePath);
+
+  // Use the checksum from INFO file (checksum of package content, not SPK file)
+  const checksum = packageInfo.checksum || calculateMD5(spkFilePath);
 
   log(`  • File: ${spkFileName}`);
   log(`  • Size: ${(fileSize / 1024).toFixed(2)} KB`);
