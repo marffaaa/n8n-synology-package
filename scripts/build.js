@@ -106,13 +106,13 @@ function copyIcons() {
   let copiedIcons = 0;
 
   // Copy root-level PACKAGE_ICON files (DSM 7+ standard)
-  // PACKAGE_ICON.PNG must be 64x64 (changed from 72x72 in DSM 6)
-  // PACKAGE_ICON_256.PNG must be 256x256
+  // PACKAGE_ICON.PNG must be 72x72 (DSM standard requirement)
+  // PACKAGE_ICON_256.PNG must be 256x256 (for high-quality display)
   const rootIcons = [
     {
-      src: path.join(ROOT_DIR, 'assets', 'logos', 'n8n', 'n8n-simple-icon-64.png'),
+      src: path.join(ROOT_DIR, 'assets', 'logos', 'n8n', 'n8n-simple-icon-72.png'),
       dest: path.join(BUILD_DIR, 'PACKAGE_ICON.PNG'),
-      name: 'PACKAGE_ICON.PNG (64x64)'
+      name: 'PACKAGE_ICON.PNG (72x72)'
     },
     {
       src: path.join(ROOT_DIR, 'assets', 'logos', 'n8n', 'n8n-simple-icon-256.png'),
