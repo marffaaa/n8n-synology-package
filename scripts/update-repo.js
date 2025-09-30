@@ -14,6 +14,7 @@ const repoDir = path.join(__dirname, '..', 'repo');
 const distDir = path.join(__dirname, '..', 'dist');
 const packageInfoPath = path.join(distDir, 'build', 'INFO');
 const packagesJsonPath = path.join(repoDir, 'packages.json');
+const indexJsonPath = path.join(repoDir, 'index.json');
 
 // ANSI colors
 const colors = {
@@ -124,11 +125,14 @@ function updateRepository() {
   fs.copyFileSync(spkFilePath, repoSpkPath);
   logSuccess(`Copied to repo/${spkFileName}`);
 
-  // Update packages.json
-  logSection('Updating packages.json...');
+  // Update repository files
+  logSection('Updating repository files...');
 
   let packagesData = { packages: [] };
-  if (fs.existsSync(packagesJsonPath)) {
+  // Check index.json first (Synology standard), then packages.json for backwards compatibility
+  if (fs.existsSync(indexJsonPath)) {
+    packagesData = JSON.parse(fs.readFileSync(indexJsonPath, 'utf8'));
+  } else if (fs.existsSync(packagesJsonPath)) {
     packagesData = JSON.parse(fs.readFileSync(packagesJsonPath, 'utf8'));
   }
 
@@ -187,6 +191,14 @@ function updateRepository() {
     'utf8'
   );
   logSuccess('packages.json updated');
+
+  // Also write index.json for Synology Package Center compatibility
+  fs.writeFileSync(
+    indexJsonPath,
+    JSON.stringify(packagesData, null, 2),
+    'utf8'
+  );
+  logSuccess('index.json updated');
 
   // Summary
   log('\n' + '='.repeat(60), colors.bright);

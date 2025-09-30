@@ -4,13 +4,37 @@
 
 <br/>
 
-<img src="./assets/logos/synology/synology-logo.svg" alt="Synology Logo" width="60%"/>
+<img src="./assets/logos/synology/synology-logo.svg" alt="Synology Logo" width="50%"/>
 
 <br/><br/>
 
+<!-- Core Badges -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit)
 [![GitHub release](https://img.shields.io/github/v/release/josedacosta/n8n-synology-package)](https://github.com/josedacosta/n8n-synology-package/releases)
+[![Downloads](https://img.shields.io/github/downloads/josedacosta/n8n-synology-package/total)](https://github.com/josedacosta/n8n-synology-package/releases)
+[![GitHub stars](https://img.shields.io/github/stars/josedacosta/n8n-synology-package?style=social)](https://github.com/josedacosta/n8n-synology-package/stargazers)
+
+<!-- Build & Quality -->
+[![Build Status](https://img.shields.io/github/actions/workflow/status/josedacosta/n8n-synology-package/release.yml?branch=main&label=build)](https://github.com/josedacosta/n8n-synology-package/actions)
+[![Code Quality](https://img.shields.io/badge/code%20quality-A+-brightgreen)](https://github.com/josedacosta/n8n-synology-package)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/josedacosta/n8n-synology-package/pulls)
+
+<!-- Technical Stack -->
 [![Synology DSM](https://img.shields.io/badge/DSM-7.0%2B-blue)](https://www.synology.com)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)](https://www.docker.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-316192)](https://www.postgresql.org/)
+[![n8n](https://img.shields.io/badge/n8n-latest-EA4B71)](https://n8n.io)
+
+<!-- Features -->
+[![Automated Backup](https://img.shields.io/badge/Backup-Automated-green)](https://github.com/josedacosta/n8n-synology-package#configuration)
+[![HTTPS Support](https://img.shields.io/badge/HTTPS-Supported-green)](https://github.com/josedacosta/n8n-synology-package#https-configuration-with-reverse-proxy)
+[![Production Ready](https://img.shields.io/badge/Production-Ready-success)](https://github.com/josedacosta/n8n-synology-package)
+
+<!-- Community -->
+[![GitHub issues](https://img.shields.io/github/issues/josedacosta/n8n-synology-package)](https://github.com/josedacosta/n8n-synology-package/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/josedacosta/n8n-synology-package)](https://github.com/josedacosta/n8n-synology-package/commits/main)
+[![Made with ❤️](https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F-red)](https://github.com/josedacosta)
 
 </div>
 
@@ -101,6 +125,9 @@ yarn install
 
 ### 3. Add icons
 
+> [!NOTE]
+> Icons are optional but recommended for a better user experience in Package Center.
+
 Download the n8n icons and place them in `package/ui/images/`:
 
 - `n8n_256.png` (256x256 pixels)
@@ -165,12 +192,9 @@ This method allows you to install and update n8n directly from Synology Package 
 
 #### Prerequisites on NAS
 
-Before installing n8n, make sure that:
-
-1. **Container Manager is installed**:
-   - Open Package Center
-   - Search for "Container Manager" (or "Docker")
-   - Install it
+> [!IMPORTANT]
+> **Container Manager must be installed first**
+> Before installing n8n, you MUST have Container Manager (Docker) installed from the Package Center. The package will fail to install without it.
 
 ### Method 2: Manual Installation
 
@@ -197,7 +221,9 @@ On first launch:
 2. Configure your preferences
 3. Start creating your workflows!
 
-**⚠️ IMPORTANT**: The file `/var/packages/n8n/target/.env` contains the encryption key. **Back it up immediately!**
+> [!IMPORTANT]
+> **Backup your encryption key immediately!**
+> The file `/var/packages/n8n/target/.env` contains the encryption key that protects all your credentials. If you lose this key, you will NOT be able to decrypt your stored credentials. Make a backup NOW!
 
 ### Installed Architecture
 
@@ -228,7 +254,7 @@ TIMEZONE=Europe/Paris
 # Database
 POSTGRES_PASSWORD=generated_password
 
-# Security (AUTOMATICALLY GENERATED)
+# Security (CRITICAL - AUTOMATICALLY GENERATED)
 N8N_ENCRYPTION_KEY=64_character_key
 
 # Basic authentication (optional)
@@ -309,6 +335,10 @@ docker-compose logs -f postgres
 
 ### Update n8n via Docker
 
+> [!TIP]
+> **Best practice: Always backup before updating**
+> Create a backup before any update to ensure you can rollback if needed.
+
 ```bash
 # Via SSH on NAS
 cd /var/packages/n8n/target
@@ -342,7 +372,8 @@ The update script automatically performs:
 - ✅ Restart containers
 - ✅ Verify deployment
 
-**Note**: Data (workflows, credentials) are preserved during the update.
+> [!NOTE]
+> Data (workflows, credentials) are preserved during the update. The update process only updates the application, not your data.
 
 ## Uninstallation
 
@@ -352,11 +383,14 @@ The update script automatically performs:
 2. Click "Uninstall"
 3. Confirm uninstallation
 
-**Note**: By default, user data is **not** deleted during uninstallation.
+> [!NOTE]
+> By default, user data is **preserved** during uninstallation. Your workflows, credentials, and databases remain intact for future reinstallation.
 
 ### Complete Data Removal
 
-If you want to also delete all n8n data:
+> [!WARNING]
+> **This will permanently delete ALL n8n data!**
+> The following commands will remove all workflows, credentials, databases, and backups. This action is IRREVERSIBLE!
 
 ```bash
 # Via SSH
@@ -436,12 +470,16 @@ cd /var/packages/n8n/target
 
 # Check logs
 docker-compose logs postgres
-
-# If corrupted, recreate database (⚠️ DATA LOSS)
-docker-compose down
-sudo rm -rf db/*
-docker-compose up -d
 ```
+
+> [!CAUTION]
+> **Database recreation will cause data loss**
+> Only use these commands if the database is corrupted and cannot be recovered:
+> ```bash
+> docker-compose down
+> sudo rm -rf db/*  # This deletes ALL database data!
+> docker-compose up -d
+> ```
 
 ### View logs in real-time
 
@@ -613,17 +651,21 @@ Contributions are welcome! To contribute:
 
 ## Security
 
-### Recommendations
+> [!IMPORTANT]
+> **Security Best Practices for Production**
+> Follow these recommendations to secure your n8n installation:
 
 1. **HTTPS**: Configure a reverse proxy with HTTPS to access n8n in production
 2. **Firewall**: Limit access to port 5678 via DSM firewall
 3. **Credentials**: n8n credentials are encrypted, but protect access to your NAS
-4. **Backups**: Regularly back up `/var/packages/n8n/target/n8n_home/`
+4. **Backups**: Regularly back up `/var/packages/n8n/target/` directory
 5. **Updates**: Keep n8n up to date to benefit from security patches
 
 ### HTTPS Configuration with Reverse Proxy
 
-Example with DSM reverse proxy:
+> [!TIP]
+> **Use Synology's built-in reverse proxy for easy HTTPS setup**
+> This is the recommended method for securing n8n with SSL/TLS.
 
 1. Open **Control Panel** → **Application Portal**
 2. Create a new rule:
@@ -653,7 +695,8 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
-**Disclaimer**: This package is not officially supported by n8n.io or Synology. Use at your own risk.
+> [!NOTE]
+> **Disclaimer**: This package is not officially supported by n8n.io or Synology. Use at your own risk.
 
 ## Search Keywords
 
