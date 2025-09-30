@@ -1,8 +1,5 @@
 {
     "port-config": {
         "protocol-file": "conf/n8n.sc"
-    },
-    "usr-local-linker": {
-        "bin": ["bin/n8n", "bin/n8n-node"]
     }
 }

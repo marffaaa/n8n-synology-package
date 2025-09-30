@@ -2,10 +2,10 @@
   "packages": [
     {
       "package": "n8n",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "dname": "n8n",
       "desc": "n8n is a powerful workflow automation tool that connects your apps and services together. Create complex automations without coding - integrate APIs, databases, webhooks, and 400+ apps. Features include visual workflow editor, error handling, scheduling, webhooks, custom code execution, and self-hosting for complete data control. Perfect for DevOps, sales automation, data processing, and business process automation.",
-      "link": "https://josedacosta.github.io/n8n-synology-package/n8n-1.0.0-noarch.spk",
+      "link": "https://josedacosta.github.io/n8n-synology-package/n8n-1.0.1-noarch.spk",
       "download_count": 0,
       "thumbnail": [
         "https://josedacosta.github.io/n8n-synology-package/packages/n8n/1.0.0/icon_72.png",
@@ -36,10 +36,10 @@
       "type": 0,
       "icon": "https://josedacosta.github.io/n8n-synology-package/packages/n8n/1.0.0/icon_72.png",
       "size": 45056,
-      "checksum": "5b9c3f9d7afce9b2ff9334dd33d348f6",
+      "checksum": "c0c9e348c7c4daf61407aa855b7fa4d9",
       "os_min_ver": "7.0-41890",
       "arch": "noarch",
-      "changelog": "Initial release for Synology DSM 7+",
+      "changelog": "Fixed installation failure - removed invalid usr-local-linker configuration and added Docker dependency",
       "beta": false,
       "report_url": "https://community.n8n.io"
     }
