@@ -125,6 +125,38 @@ function updateRepository() {
   fs.copyFileSync(spkFilePath, repoSpkPath);
   logSuccess(`Copied to repo/${spkFileName}`);
 
+  // Copy icons and screenshots to repo
+  logSection('Copying icons and screenshots...');
+  const packageDir = path.join(repoDir, 'packages', packageInfo.package, packageInfo.version);
+  fs.mkdirSync(packageDir, { recursive: true });
+
+  // Copy icons if they exist
+  const icon72Path = path.join(distDir, 'build', 'ui', 'images', 'n8n-72.png');
+  const icon256Path = path.join(distDir, 'build', 'ui', 'images', 'n8n-256.png');
+
+  if (fs.existsSync(icon72Path)) {
+    fs.copyFileSync(icon72Path, path.join(packageDir, 'icon_72.png'));
+    logSuccess('Copied icon_72.png');
+  }
+
+  if (fs.existsSync(icon256Path)) {
+    fs.copyFileSync(icon256Path, path.join(packageDir, 'icon_256.png'));
+    logSuccess('Copied icon_256.png');
+  }
+
+  // Copy screenshots if they exist
+  const screenshotsDir = path.join(__dirname, '..', 'jose', 'docs', 'packages', packageInfo.package, packageInfo.version, 'screenshots');
+  if (fs.existsSync(screenshotsDir)) {
+    const screenshots = fs.readdirSync(screenshotsDir).filter(f => f.endsWith('.png')).slice(0, 2);
+    screenshots.forEach((screenshot, index) => {
+      fs.copyFileSync(
+        path.join(screenshotsDir, screenshot),
+        path.join(packageDir, `snapshot_${index + 1}.png`)
+      );
+      logSuccess(`Copied snapshot_${index + 1}.png`);
+    });
+  }
+
   // Update repository files
   logSection('Updating repository files...');
 
@@ -141,11 +173,21 @@ function updateRepository() {
     pkg => pkg.package !== packageInfo.package
   );
 
-  // Generate icon URLs (use GitHub Pages URLs like SynoCommunity pattern)
+  // Generate icon and snapshot URLs (use GitHub Pages URLs like SynoCommunity pattern)
   // Pattern: https://josedacosta.github.io/n8n-synology-package/packages/{package}/{version}/icon_{size}.png
   const baseIconUrl = `https://josedacosta.github.io/n8n-synology-package/packages/${packageInfo.package}/${packageInfo.version}`;
   const icon72Url = `${baseIconUrl}/icon_72.png`;
   const icon256Url = `${baseIconUrl}/icon_256.png`;
+
+  // Generate snapshot URLs (check if snapshots exist)
+  const packageDir = path.join(repoDir, 'packages', packageInfo.package, packageInfo.version);
+  const snapshots = [];
+  if (fs.existsSync(path.join(packageDir, 'snapshot_1.png'))) {
+    snapshots.push(`${baseIconUrl}/snapshot_1.png`);
+  }
+  if (fs.existsSync(path.join(packageDir, 'snapshot_2.png'))) {
+    snapshots.push(`${baseIconUrl}/snapshot_2.png`);
+  }
 
   // Add new package
   const newPackage = {
@@ -156,7 +198,7 @@ function updateRepository() {
     link: packageInfo.maintainer_url,
     download_count: 0,
     thumbnail: [icon72Url, icon256Url],
-    snapshot: [],
+    snapshot: snapshots,
     qinst: packageInfo.silent_install === 'yes',
     qstart: false,
     qupgrade: packageInfo.silent_upgrade === 'yes',

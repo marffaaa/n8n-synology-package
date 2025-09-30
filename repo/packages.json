@@ -11,7 +11,10 @@
         "https://josedacosta.github.io/n8n-synology-package/packages/n8n/1.0.0/icon_72.png",
         "https://josedacosta.github.io/n8n-synology-package/packages/n8n/1.0.0/icon_256.png"
       ],
-      "snapshot": [],
+      "snapshot": [
+        "https://josedacosta.github.io/n8n-synology-package/packages/n8n/1.0.0/snapshot_1.png",
+        "https://josedacosta.github.io/n8n-synology-package/packages/n8n/1.0.0/snapshot_2.png"
+      ],
       "qinst": false,
       "qstart": false,
       "qupgrade": true,
