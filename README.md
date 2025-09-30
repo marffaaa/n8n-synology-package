@@ -4,7 +4,7 @@
 
 <br/>
 
-<img src="./assets/logos/synology/synology-logo.svg" alt="Synology Logo" width="70%"/>
+<img src="./assets/logos/synology/synology-logo.svg" alt="Synology Logo" width="60%"/>
 
 <br/><br/>
 
@@ -654,3 +654,12 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 ---
 
 **Disclaimer**: This package is not officially supported by n8n.io or Synology. Use at your own risk.
+
+## Search Keywords
+
+<details>
+<summary>🔍 Keywords for Search Engines</summary>
+
+`n8n synology package` `n8n synology dsm` `n8n synology nas` `n8n synology docker` `n8n synology installation` `n8n synology spk` `n8n synology dsm 7` `n8n synology container manager` `n8n synology postgresql` `n8n synology docker compose` `workflow automation synology` `synology workflow automation` `synology automation tools` `synology n8n setup` `synology n8n docker` `install n8n synology nas` `n8n package synology dsm 7` `synology n8n reverse proxy` `synology n8n https` `synology n8n backup` `synology workflow tool` `n8n synology tutorial` `n8n synology guide` `n8n synology configuration` `synology automation workflow` `synology zapier alternative` `synology make alternative` `synology integromat alternative` `synology ifttt alternative` `synology workflow builder` `synology no-code automation` `synology api automation` `synology webhook automation` `synology task automation` `synology business automation` `synology process automation` `synology integration platform` `synology workflow management` `n8n self-hosted synology` `synology self-hosted automation` `synology private automation` `n8n nas installation` `n8n diskstation` `n8n ds920+` `n8n ds923+` `n8n ds1522+` `n8n ds1621+` `n8n rs822+` `synology package center n8n` `synology community package n8n` `synology n8n postgresql database` `synology n8n sqlite to postgresql` `synology n8n migration` `synology n8n update` `synology n8n upgrade` `synology n8n docker update` `synology n8n docker compose yml` `synology n8n environment variables` `synology n8n webhook url` `synology n8n encryption key` `synology n8n basic auth` `synology n8n authentication` `synology n8n port configuration` `synology n8n ssl` `synology n8n nginx` `synology n8n reverse proxy setup` `synology n8n application portal` `synology n8n firewall` `synology n8n security` `synology n8n backup script` `synology n8n restore` `synology n8n data backup` `synology n8n workflow backup` `synology n8n credentials backup` `synology n8n automated backup` `synology n8n troubleshooting` `synology n8n logs` `synology n8n debug` `synology n8n error` `synology n8n port 5678` `synology n8n permissions` `synology n8n database error` `synology n8n container error` `synology n8n docker logs` `n8n synology github` `n8n synology repository` `n8n synology open source` `n8n synology community` `n8n synology support` `n8n synology forum` `n8n synology reddit` `build n8n synology package` `create n8n synology spk` `compile n8n synology package` `n8n synology development` `n8n synology package development` `synology spk n8n` `synology package n8n build`
+
+</details>
