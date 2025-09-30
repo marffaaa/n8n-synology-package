@@ -60,31 +60,54 @@ jobs:
           echo "MD5=$MD5" >> $GITHUB_OUTPUT
           echo "SHA256=$SHA256" >> $GITHUB_OUTPUT
 
-      - name: Extract changelog for this version
+      - name: Generate changelog from commits
         id: changelog
-        run: |
-          VERSION=${{ steps.get_version.outputs.VERSION }}
-          if [ -f CHANGELOG.md ]; then
-            # Extract changelog section for this version
-            CHANGELOG=$(awk -v ver="$VERSION" '
-              /^## / {
-                if (found) exit;
-                if ($0 ~ ver) found=1;
-                next;
-              }
-              found {print}
-            ' CHANGELOG.md)
-
-            if [ -z "$CHANGELOG" ]; then
-              CHANGELOG="Release version $VERSION"
-            fi
-          else
-            CHANGELOG="Release version $VERSION"
-          fi
-
-          # Save to file to preserve formatting
-          echo "$CHANGELOG" > /tmp/release_notes.txt
-          echo "CHANGELOG_FILE=/tmp/release_notes.txt" >> $GITHUB_OUTPUT
+        uses: mikepenz/release-changelog-builder-action@v4
+        with:
+          configuration: |
+            {
+              "categories": [
+                {
+                  "title": "## 🚀 Features",
+                  "labels": ["feat", "feature", "enhancement"]
+                },
+                {
+                  "title": "## 🐛 Bug Fixes",
+                  "labels": ["fix", "bugfix", "bug"]
+                },
+                {
+                  "title": "## 📚 Documentation",
+                  "labels": ["docs", "documentation"]
+                },
+                {
+                  "title": "## 🔧 Maintenance",
+                  "labels": ["chore", "refactor", "style", "perf", "test"]
+                }
+              ],
+              "template": "#{{CHANGELOG}}\n\n**Full Changelog**: #{{RELEASE_DIFF}}",
+              "pr_template": "- #{{TITLE}} (#{{NUMBER}})",
+              "empty_template": "- No changes in this release",
+              "label_extractor": [
+                {
+                  "pattern": "^(feat|feature)(\\(.+\\))?:",
+                  "target": "feat"
+                },
+                {
+                  "pattern": "^fix(\\(.+\\))?:",
+                  "target": "fix"
+                },
+                {
+                  "pattern": "^docs(\\(.+\\))?:",
+                  "target": "docs"
+                },
+                {
+                  "pattern": "^(chore|refactor|style|perf|test)(\\(.+\\))?:",
+                  "target": "chore"
+                }
+              ]
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -115,7 +138,7 @@ jobs:
 
             ## Changelog
 
-            ${{ steps.changelog.outputs.CHANGELOG_FILE && format('{0}', steps.changelog.outputs.CHANGELOG_FILE) }}
+            ${{ steps.changelog.outputs.changelog }}
 
             ## Documentation
 

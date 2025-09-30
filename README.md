@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="./assets/logos/n8n/n8n-logo.svg" alt="n8n Logo" width="50%"/>
+<img src="./assets/logos/n8n/n8n-logo.svg" alt="n8n Logo" width="70%"/>
 
 <br/>
 
-<img src="./assets/logos/synology/synology-logo.svg" alt="Synology Logo" width="25%"/>
+<img src="./assets/logos/synology/synology-logo.svg" alt="Synology Logo" width="70%"/>
 
 <br/><br/>
 

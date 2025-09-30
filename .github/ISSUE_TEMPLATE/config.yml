@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/josedacosta/n8n-synology-package/blob/main/README.md
+    about: Read the installation and usage documentation
+  - name: 💬 Community Support
+    url: https://github.com/josedacosta/n8n-synology-package/discussions
+    about: Ask questions and discuss with the community
+  - name: 🔧 n8n Documentation
+    url: https://docs.n8n.io
+    about: Official n8n documentation (for n8n-specific questions)
+  - name: 🐛 n8n Issues
+    url: https://github.com/n8n-io/n8n/issues
+    about: Report issues with n8n itself (not the Synology package)

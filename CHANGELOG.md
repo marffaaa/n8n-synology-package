@@ -5,7 +5,18 @@ All notable changes to the n8n Synology Package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] - 2025-09-29
+## [Unreleased]
+
+### Added
+- TypeScript version consistency checker (`check-version-consistency.ts`)
+- Enhanced documentation suite (FAQ, TROUBLESHOOTING, UPGRADING guides)
+- Automated version checking in CI/CD pipeline
+
+### Changed
+- Renamed `verify-versions.js` to `check-version-consistency.ts` with TypeScript support
+- Enhanced version checking to include CHANGELOG.md validation
+
+## [1.0.1] - 2024-09-29
 
 ### Added
 - **Synology Package Center Repository**: Users can now add the package repository to Package Center for direct installation
@@ -20,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Corrected repository URL in documentation from `/repo/` to `/index.json`
 
-## [1.0.0] - 2025-09-29
+## [1.0.0] - 2024-09-29
 
 ### Added
 - Initial release for Synology DSM 7+
@@ -52,5 +63,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Log retrieval and troubleshooting guide
 - Example reverse proxy configuration for HTTPS
 
-[1.0.1]: https://github.com/josedacosta/n8n-synology-package/releases/tag/v1.0.1
+[Unreleased]: https://github.com/josedacosta/n8n-synology-package/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/josedacosta/n8n-synology-package/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/josedacosta/n8n-synology-package/releases/tag/v1.0.0

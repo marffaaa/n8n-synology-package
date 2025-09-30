@@ -9,6 +9,8 @@
     "update-repo": "node scripts/update-repo.js",
     "release": "yarn build && yarn package && yarn update-repo",
     "clean": "rm -rf dist/*.spk",
+    "check:versions": "tsx scripts/version/check-version-consistency.ts",
+    "check:links": "tsx scripts/links/check-links.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -22,8 +24,11 @@
   "author": "josedacosta",
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^20.0.0",
     "archiver": "^6.0.0",
-    "fs-extra": "^11.0.0"
+    "fs-extra": "^11.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
