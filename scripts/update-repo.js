@@ -147,7 +147,10 @@ function updateRepository() {
   // Copy screenshots if they exist
   const screenshotsDir = path.join(__dirname, '..', 'jose', 'docs', 'packages', packageInfo.package, packageInfo.version, 'screenshots');
   if (fs.existsSync(screenshotsDir)) {
-    const screenshots = fs.readdirSync(screenshotsDir).filter(f => f.endsWith('.png')).slice(0, 2);
+    const screenshots = fs.readdirSync(screenshotsDir)
+      .filter(f => f.endsWith('.png'))
+      .sort(); // Sort to maintain order
+
     screenshots.forEach((screenshot, index) => {
       fs.copyFileSync(
         path.join(screenshotsDir, screenshot),
@@ -179,14 +182,18 @@ function updateRepository() {
   const icon72Url = `${baseIconUrl}/icon_72.png`;
   const icon256Url = `${baseIconUrl}/icon_256.png`;
 
-  // Generate snapshot URLs (check if snapshots exist)
+  // Generate snapshot URLs (check all snapshots that exist)
   const packageDir = path.join(repoDir, 'packages', packageInfo.package, packageInfo.version);
   const snapshots = [];
-  if (fs.existsSync(path.join(packageDir, 'snapshot_1.png'))) {
-    snapshots.push(`${baseIconUrl}/snapshot_1.png`);
-  }
-  if (fs.existsSync(path.join(packageDir, 'snapshot_2.png'))) {
-    snapshots.push(`${baseIconUrl}/snapshot_2.png`);
+
+  // Check for all possible snapshots (up to 10 for future expansion)
+  for (let i = 1; i <= 10; i++) {
+    const snapshotFile = path.join(packageDir, `snapshot_${i}.png`);
+    if (fs.existsSync(snapshotFile)) {
+      snapshots.push(`${baseIconUrl}/snapshot_${i}.png`);
+    } else {
+      break; // Stop when we don't find a sequential snapshot
+    }
   }
 
   // Add new package
